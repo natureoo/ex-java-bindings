@@ -37,14 +37,40 @@ public class HtlcReactiveMain {
     public static final String BOB_USER = "Bob::1220741beaf119ba1e725820a643535e60c2cb4c7f81f4ecb5f8888d582ae4d3fffd";
 
     public static final String BANK_USER = "Bank::1220741beaf119ba1e725820a643535e60c2cb4c7f81f4ecb5f8888d582ae4d3fffd";
-    public static final String BOND_ISSUER_USER = "BondIssuer::1220741beaf119ba1e725820a643535e60c2cb4c7f81f4ecb5f8888d582ae4d3fffd";
+    public static final String BOND_ISSUER_USER = "Government::1220741beaf119ba1e725820a643535e60c2cb4c7f81f4ecb5f8888d582ae4d3fffd";
 
     public static final String HOST = "127.0.0.1";
 
     public static final int PORT = 6865;
 
+    private static DamlLedgerClient client;
 
-    public static void main(String[] args) {
+    private static Transferable.ContractId transferableContractId;
+
+    private static Command command;
+
+    private static CreatedEvent createdEvent;
+
+    private static List<Event> events;
+
+    private static HTLCProposal.Contract htlcProposalContract;
+
+    private static AccountKey ownerAccountKey;
+
+    private static AccountKey receiverAccountKey;
+
+    private static List<String> aliceList = Arrays.asList(ALICE_USER);
+    private static List<String> aliceBankList = Arrays.asList(ALICE_USER, BANK_USER);
+    private static List<String> bankGovList = Arrays.asList( BANK_USER, BOND_ISSUER_USER);
+    private static List<String> aliceBankGovList = Arrays.asList(ALICE_USER, BANK_USER, BOND_ISSUER_USER);
+    private static List<String> bobList = Arrays.asList(BOB_USER);
+    private static List<String> bobBankList = Arrays.asList(BOB_USER, BANK_USER);
+    private static List<String> bankList = Arrays.asList( BANK_USER);
+    private static List<String> bondIssuerList = Arrays.asList(BOND_ISSUER_USER);
+    private static List<String> bondIssuerBankList = Arrays.asList(BOND_ISSUER_USER, BANK_USER);
+    private static List<String> allPartiesList = Arrays.asList(ALICE_USER, BOB_USER, BANK_USER, BOND_ISSUER_USER);
+
+    private static void prepare(){
         // Extract host and port from arguments
         String host = HOST;
         int port = PORT;
@@ -52,7 +78,7 @@ public class HtlcReactiveMain {
         // each party will create this number of initial Ping contracts
 
         // create a client object to access services on the ledger
-        DamlLedgerClient client = DamlLedgerClient.newBuilder(host, port).build();
+        client = DamlLedgerClient.newBuilder(host, port).build();
 
         // Connects to the ledger and runs initial validation
         client.connect();
@@ -62,25 +88,20 @@ public class HtlcReactiveMain {
         String version = "v0.1";
 
 
-        InstrumentKey  instrumentKey = new InstrumentKey(ALICE_USER, BOND_ISSUER_USER, id, version);
-        AccountKey ownerAccountKey = new AccountKey( BANK_USER,ALICE_USER, id);
+        InstrumentKey  instrumentKey = new InstrumentKey(BANK_USER, BOND_ISSUER_USER, id, version);
+        ownerAccountKey = new AccountKey( BANK_USER,ALICE_USER, id);
 
-        AccountKey receiverAccountKey = new AccountKey( BANK_USER,BOB_USER, id);
+        receiverAccountKey = new AccountKey( BANK_USER,BOB_USER, id);
 
-        List<String> aliceBankList = Arrays.asList(ALICE_USER, BANK_USER);
-        List<String> bobBankList = Arrays.asList(BOB_USER, BANK_USER);
-        List<String> bankList = Arrays.asList( BANK_USER);
-        List<String> bondIssuerList = Arrays.asList(BOND_ISSUER_USER);
-        List<String> bondIssuerBankList = Arrays.asList(BOND_ISSUER_USER, BANK_USER);
-        List<String> allPartiesList = Arrays.asList(ALICE_USER, BOB_USER, BANK_USER, BOND_ISSUER_USER);
+
 //        Set<String> allParties =
 //        Map.fromList [("HTLC", allParties)]
 
-         Map<String, Unit> allPartiesMap = new HashMap<>();
+        Map<String, Unit> allPartiesMap = new HashMap<>();
         allPartiesMap.put(ALICE_USER, Unit.getInstance());
         allPartiesMap.put(BOB_USER, Unit.getInstance());
         allPartiesMap.put(BANK_USER, Unit.getInstance());
-        allPartiesMap.put(BOND_ISSUER_USER, Unit.getInstance());
+//        allPartiesMap.put(BOND_ISSUER_USER, Unit.getInstance());
         Set<String> allPartieesSet = new Set<>(allPartiesMap);
         Map<String, Set<String>> observers = new HashMap<>();
         observers.put("HTLC", allPartieesSet);
@@ -122,29 +143,29 @@ public class HtlcReactiveMain {
 
         Fungible fungible = new Fungible(instrumentKey, ownerAccountKey, BigDecimal.ONE, Optional.empty(), observers);
         command = fungible.create().commands().get(0);
-        events = submitCommand( client, aliceBankList, allPartiesList,  Fungible.TEMPLATE_ID, command);
+        events = submitCommand( client, aliceBankGovList, aliceBankGovList,  Fungible.TEMPLATE_ID, command);
 //        String tx_id = transaction.getTransactionId();
         createdEvent = (CreatedEvent)events.get(0);
         Fungible.Contract fungibleContract = Fungible.Contract.fromCreatedEvent(createdEvent);
-        Transferable.ContractId transferableContractId = fungibleContract.id.toInterface(Transferable.INTERFACE);
+        transferableContractId = fungibleContract.id.toInterface(Transferable.INTERFACE);
         logger.info("transferableContractId[{}]", transferableContractId);
+    }
 
-        String hash = "HASH";
+    private static void createHTLCProposal(String hash){
         Date today = new Date();
         Date tomorrow = new Date(today.getTime() + (1000 * 60 * 60 * 24));
 //        Date tomorrow = today;
         Instant unlockTime = tomorrow.toInstant();
         HTLCProposal htlcProposal = new HTLCProposal(ALICE_USER, BOB_USER, transferableContractId, hash, unlockTime);
         command = htlcProposal.create().commands().get(0);
-        List<String> aliceList = new ArrayList<>();
-        aliceList.add(ALICE_USER);
-        List<String> bobList = new ArrayList<>();
-        bobList.add(BOB_USER);
+
+
         events = submitCommand(client, aliceList, bobList, HTLCProposal.TEMPLATE_ID, command);
         createdEvent = (CreatedEvent)events.get(0);
-        HTLCProposal.Contract htlcProposalContract = HTLCProposal.Contract.fromCreatedEvent(createdEvent);
+        htlcProposalContract = HTLCProposal.Contract.fromCreatedEvent(createdEvent);
+    }
 
-
+    private static void acceptHTCLProposal(){
 
         command = htlcProposalContract.id.exerciseHTLCProposal_Accept(receiverAccountKey).commands().get(0);
         events = submitCommand(client, bobList, aliceList, HTLCProposal.TEMPLATE_ID, command);
@@ -161,6 +182,9 @@ public class HtlcReactiveMain {
             return;
         }
 
+    }
+
+    private static void claimBond(String hash){
         HTLC.Contract htlcContract = HTLC.Contract.fromCreatedEvent(createdEvent);
 
         List<String> aliceBobList = new ArrayList<>();
@@ -172,41 +196,16 @@ public class HtlcReactiveMain {
         for(Event event: events) {
             logger.info("HTLC event[{}]", event);
         }
-
-//        try {
-//            // wait a couple of seconds for the processing to finish
-//            Thread.sleep(20000);
-//            System.exit(0);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
     }
 
-//    public  fetch(Identifier templateId, String contractId, Class<T> contractType) {
-//        // TODO very inefficient; fix this
-//        return queryAllRaw(templateId)
-//                .filter(e -> contractId.equals(e.getContractId()))
-//                .map(e -> parseAs(e, contractType))
-//                .map(Optional::of)
-//                .first(Optional.empty())
-//                .blockingGet();
-//    }
-//
-//    private Flowable<CreatedEvent> queryAllRaw(Identifier templateId) {
-//        CompletableFuture<LedgerOffset> finalOffset = new CompletableFuture<>();
-//
-//        FiltersByParty filter = getFiltersByParty(templateId);
-//
-//        return getClient().getActiveContractSetClient()
-//                .getActiveContracts(filter, false)
-//                .doOnEach(notification -> {
-//                    Optional.ofNullable(notification.getValue())
-//                            .flatMap(GetActiveContractsResponse::getOffset)
-//                            .ifPresent(s -> finalOffset.complete(new LedgerOffset.Absolute(s)));
-//                })
-//                .flatMap(resp -> Flowable.fromIterable(resp.getCreatedEvents()))
-//                .filter(e -> compareTemplateId( e.getTemplateId(), templateId));
-//    }
+
+    public static void main(String[] args) {
+        String hash = "HASH";
+        prepare();
+        createHTLCProposal(hash);
+        acceptHTCLProposal();
+        claimBond(hash);
+    }
 
 
     private static List<Event> submitCommand( LedgerClient client, List<String> actAs, List<String> readAs,
