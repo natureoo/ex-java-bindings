@@ -8,7 +8,7 @@ import com.daml.ledger.rxjava.DamlLedgerClient;
 import com.daml.ledger.rxjava.LedgerClient;
 import com.daml.quickstart.model.da.set.types.Set;
 import com.daml.quickstart.model.daml.finance.account.account.Factory;
-import com.daml.quickstart.model.daml.finance.holding.nonfungible.NonFungible;
+import com.daml.quickstart.model.daml.finance.holding.fungible.Fungible;
 import com.daml.quickstart.model.daml.finance.interface$.account.account.Controllers;
 import com.daml.quickstart.model.daml.finance.interface$.holding.transferable.Transferable;
 import com.daml.quickstart.model.daml.finance.interface$.types.common.types.AccountKey;
@@ -33,19 +33,16 @@ public class HtlcReactiveMain {
     public static final String APP_ID = "HTLCReactiveApp";
 
     // constants for referring to users with access to the parties
-    public static final String ALICE_USER = "Alice::1220670953fca6d4470d99f810af2ebf729da71d66da8a692086cbc5a541cbb2d92c";
-    public static final String BOB_USER = "Bob::1220670953fca6d4470d99f810af2ebf729da71d66da8a692086cbc5a541cbb2d92c";
+    public static final String ALICE_USER = "Alice::1220741beaf119ba1e725820a643535e60c2cb4c7f81f4ecb5f8888d582ae4d3fffd";
+    public static final String BOB_USER = "Bob::1220741beaf119ba1e725820a643535e60c2cb4c7f81f4ecb5f8888d582ae4d3fffd";
 
-    public static final String BANK_USER = "Bank::1220670953fca6d4470d99f810af2ebf729da71d66da8a692086cbc5a541cbb2d92c";
-    public static final String BOND_ISSUER_USER = "BondIssuer::1220670953fca6d4470d99f810af2ebf729da71d66da8a692086cbc5a541cbb2d92c";
+    public static final String BANK_USER = "Bank::1220741beaf119ba1e725820a643535e60c2cb4c7f81f4ecb5f8888d582ae4d3fffd";
+    public static final String BOND_ISSUER_USER = "BondIssuer::1220741beaf119ba1e725820a643535e60c2cb4c7f81f4ecb5f8888d582ae4d3fffd";
 
     public static final String HOST = "127.0.0.1";
 
     public static final int PORT = 6865;
 
-
-//    public static final String nonFungibleIdentifier = com.daml.ledger.javaapi.data.Identifier.fromProto(Identifier.newBuilder()
-//            .setPackageId(packageId).setModuleName("Daml.Finance.Holding.NonFungible").setEntityName("NonFungible").build());
 
     public static void main(String[] args) {
         // Extract host and port from arguments
@@ -98,12 +95,12 @@ public class HtlcReactiveMain {
         Controllers controllers = new Controllers(emptySet, emptySet);
 //        Account account = new Account(BANK_USER, ALICE_USER, controllers)
 
-        com.daml.quickstart.model.daml.finance.holding.nonfungible.Factory nonFungibleFactory = new com.daml.quickstart.model.daml.finance.holding.nonfungible.Factory(BOND_ISSUER_USER, observers);
-        command = nonFungibleFactory.create().commands().get(0);
-        events = submitCommand(client, bondIssuerBankList, bondIssuerBankList, com.daml.quickstart.model.daml.finance.holding.nonfungible.Factory.TEMPLATE_ID, command);
+        com.daml.quickstart.model.daml.finance.holding.fungible.Factory FungibleFactory = new com.daml.quickstart.model.daml.finance.holding.fungible.Factory(BOND_ISSUER_USER, observers);
+        command = FungibleFactory.create().commands().get(0);
+        events = submitCommand(client, bondIssuerBankList, bondIssuerBankList, com.daml.quickstart.model.daml.finance.holding.fungible.Factory.TEMPLATE_ID, command);
         createdEvent = (CreatedEvent)events.get(0);
-        com.daml.quickstart.model.daml.finance.holding.nonfungible.Factory.Contract nonFungibleFactoryContract = com.daml.quickstart.model.daml.finance.holding.nonfungible.Factory.Contract.fromCreatedEvent(createdEvent);
-        com.daml.quickstart.model.daml.finance.interface$.holding.factory.Factory.ContractId holdingFactoryContractId = nonFungibleFactoryContract.id.toInterface(com.daml.quickstart.model.daml.finance.interface$.holding.factory.Factory.INTERFACE);
+        com.daml.quickstart.model.daml.finance.holding.fungible.Factory.Contract fungibleFactoryContract = com.daml.quickstart.model.daml.finance.holding.fungible.Factory.Contract.fromCreatedEvent(createdEvent);
+        com.daml.quickstart.model.daml.finance.interface$.holding.factory.Factory.ContractId holdingFactoryContractId = fungibleFactoryContract.id.toInterface(com.daml.quickstart.model.daml.finance.interface$.holding.factory.Factory.INTERFACE);
 
         try {
             command = acountFactorInterfaceContractId.exerciseCreate(ownerAccountKey, holdingFactoryContractId, controllers, "Alice's account", observers).commands().get(0);
@@ -123,13 +120,13 @@ public class HtlcReactiveMain {
             e.printStackTrace();
         }
 
-        NonFungible nonFungible = new NonFungible(instrumentKey, ownerAccountKey, BigDecimal.ONE, Optional.empty(), observers);
-        command = nonFungible.create().commands().get(0);
-        events = submitCommand( client, aliceBankList, allPartiesList,  NonFungible.TEMPLATE_ID, command);
+        Fungible fungible = new Fungible(instrumentKey, ownerAccountKey, BigDecimal.ONE, Optional.empty(), observers);
+        command = fungible.create().commands().get(0);
+        events = submitCommand( client, aliceBankList, allPartiesList,  Fungible.TEMPLATE_ID, command);
 //        String tx_id = transaction.getTransactionId();
         createdEvent = (CreatedEvent)events.get(0);
-        NonFungible.Contract nonFungibleContract = NonFungible.Contract.fromCreatedEvent(createdEvent);
-        Transferable.ContractId transferableContractId = nonFungibleContract.id.toInterface(Transferable.INTERFACE);
+        Fungible.Contract fungibleContract = Fungible.Contract.fromCreatedEvent(createdEvent);
+        Transferable.ContractId transferableContractId = fungibleContract.id.toInterface(Transferable.INTERFACE);
         logger.info("transferableContractId[{}]", transferableContractId);
 
         String hash = "HASH";
