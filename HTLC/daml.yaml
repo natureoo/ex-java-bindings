@@ -1,0 +1,21 @@
+# Copyright (c) 2023 ASX Operations Pty Ltd. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+sdk-version: 2.6.3
+name: daml-htlc-model
+version: 0.2.0 # This version must also be updated in the dependencies section of the daml.yaml file in the test folder
+source: src
+dependencies:
+  - daml-prim
+  - daml-stdlib
+data-dependencies:
+  # INTERFACE DEPENDENCIES
+  - ../../.lib/daml-finance-interface-account.dar
+  - ../../.lib/daml-finance-interface-holding.dar
+  - ../../.lib/daml-finance-interface-types-common.dar
+build-options:
+  - --target=1.15
+codegen:
+  java:
+    package-prefix: examples.pingpong.codegen
+    output-directory: src/main/java/
