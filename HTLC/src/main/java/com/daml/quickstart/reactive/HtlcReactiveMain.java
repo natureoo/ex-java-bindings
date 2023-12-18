@@ -3,16 +3,12 @@
 
 package com.daml.quickstart.reactive;
 
-import com.daml.ledger.api.v1.TransactionOuterClass;
 import com.daml.ledger.javaapi.data.*;
-import com.daml.ledger.javaapi.data.codegen.Exercised;
-import com.daml.ledger.javaapi.data.codegen.Update;
 import com.daml.ledger.rxjava.DamlLedgerClient;
 import com.daml.ledger.rxjava.LedgerClient;
+import com.daml.quickstart.model.da.set.types.Set;
 import com.daml.quickstart.model.daml.finance.account.account.Factory;
-import com.daml.quickstart.model.daml.finance.holding.fungible.Fungible;
 import com.daml.quickstart.model.daml.finance.holding.nonfungible.NonFungible;
-import com.daml.quickstart.model.daml.finance.interface$.account.account.Account;
 import com.daml.quickstart.model.daml.finance.interface$.account.account.Controllers;
 import com.daml.quickstart.model.daml.finance.interface$.holding.transferable.Transferable;
 import com.daml.quickstart.model.daml.finance.interface$.types.common.types.AccountKey;
@@ -20,18 +16,13 @@ import com.daml.quickstart.model.daml.finance.interface$.types.common.types.Id;
 import com.daml.quickstart.model.daml.finance.interface$.types.common.types.InstrumentKey;
 import com.daml.quickstart.model.synfini.htlc.HTLC;
 import com.daml.quickstart.model.synfini.htlc.HTLCProposal;
-import com.google.type.DateTime;
-import io.reactivex.Flowable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.*;
 import java.util.Date;
-import java.util.concurrent.CompletableFuture;
-import com.daml.quickstart.model.da.set.types.Set;
+import java.util.*;
 
 
 public class HtlcReactiveMain {
